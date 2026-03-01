@@ -8,7 +8,6 @@ This controller was built on top of a basic teleop script (`simple_teleop.py`). 
 - Keyboard control: `w` / `x` / `a` / `d` / `s` / `q`
 - **Automatic stop** when approaching obstacles closer than **0.5 m** ahead
 - Backward movement (`x`) and in-place rotations (`a` / `d`) are **always allowed** — even with an obstacle directly in front
-- Publishes commands to the standard ROS 2 control topic: `/diff_drive_controller/cmd_vel` (type: `geometry_msgs/msg/TwistStamped`)
 - Continuously prints the current **minimum distance** to obstacles in the terminal
 
 ## Controls
