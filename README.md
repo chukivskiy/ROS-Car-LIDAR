@@ -37,6 +37,5 @@ This controller was built on top of a basic teleop script (`simple_teleop.py`). 
 Make sure you are in a ROS 2 environment (or the provided Docker container) with access to `/scan` and the controller.
 
 ```bash
-# Run directly (Python 3)
 python3 src/my_diff_robot/scripts/simple_teleop.py
 
