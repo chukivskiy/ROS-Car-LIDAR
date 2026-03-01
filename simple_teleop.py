@@ -3,6 +3,7 @@ import sys
 import tty
 import termios
 import select
+import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import TwistStamped
@@ -12,7 +13,12 @@ from sensor_msgs.msg import LaserScan
 class SimpleTeleop(Node):
     def __init__(self):
         super().__init__('simple_teleop')
-        self.pub = self.create_publisher(TwistStamped, '/diff_drive_controller/cmd_vel', 10)
+
+        self.pub = self.create_publisher(
+            TwistStamped,
+            '/diff_drive_controller/cmd_vel',
+            10
+        )
 
         self.sub_scan = self.create_subscription(
             LaserScan,
@@ -24,7 +30,7 @@ class SimpleTeleop(Node):
         self.min_distance = 10.0
         self.SAFETY_THRESHOLD = 0.50
         self.last_print_time = self.get_clock().now()
-		# Save
+
         self.desired_linear = 0.0
         self.desired_angular = 0.0
 
@@ -32,7 +38,14 @@ class SimpleTeleop(Node):
         self.get_logger().info("Safety stop: ≤ 0.5 m")
 
     def scan_callback(self, msg: LaserScan):
-        valid_ranges = [r for r in msg.ranges if r > 0.01 and r < 30.0]
+        valid_ranges = [
+            r for r in msg.ranges
+            if not math.isnan(r)
+            and r != 0.0
+            and r > 0.01
+            and r < 30.0
+        ]
+
         if valid_ranges:
             self.min_distance = min(valid_ranges)
         else:
@@ -49,8 +62,7 @@ class SimpleTeleop(Node):
             return des_lin, des_ang
 
         if self.min_distance <= self.SAFETY_THRESHOLD:
-		
-			return 0.0, des_ang   # rotation allowed
+            return 0.0, des_ang   # rotation allowed
 
         return des_lin, des_ang
 
@@ -76,8 +88,8 @@ class SimpleTeleop(Node):
                 if ready:
                     key = sys.stdin.read(1)
                     if key == '\x1b':
-						select.select([sys.stdin], [], [], 0.02)
-                        sys.stdin.read(10)
+                        select.select([sys.stdin], [], [], 0.02)
+                        sys.stdin.read(10)  # skip rest of escape sequence
                         continue
 
             finally:
@@ -102,7 +114,7 @@ class SimpleTeleop(Node):
                     self.desired_angular = 0.0
                 elif key in ['q', '\x03']:
                     print("\nВихід.")
-					break
+                    break
 
             # ────────────────────────────────
             safe_lin, safe_ang = self.get_safe_velocity(
@@ -115,16 +127,17 @@ class SimpleTeleop(Node):
             msg.header.stamp = self.get_clock().now().to_msg()
             self.pub.publish(msg)
 
-        print("\nNode interaption...")
+        print("\nNode interruption...")
 
 
 def main():
     rclpy.init()
     node = SimpleTeleop()
+
     try:
         node.run()
     except KeyboardInterrupt:
-		pass
+        pass
     finally:
         node.destroy_node()
         rclpy.shutdown()
